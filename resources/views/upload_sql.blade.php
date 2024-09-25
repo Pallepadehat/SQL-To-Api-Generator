@@ -1,334 +1,219 @@
-<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SQL to API Generator</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 100;
-            padding: 1rem 1.5rem;
-            background-color: #4a5568;
-            color: #fff;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            0% {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .code-container {
+            max-height: 500px;
+            overflow-y: auto;
         }
     </style>
 </head>
 
 <body class="bg-gray-100 font-sans">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-blue-500 mb-6">SQL to API Generator</h1>
-        <div class="bg-white shadow-md rounded-md p-6 mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <label for="language-select" class="font-medium">Language:</label>
-                <select id="language-select" class="border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="javascript">JavaScript</option>
-                    <option value="laravel">Laravel</option>
-                    <option value="nextjs">Next.js</option>
-                    <option value="typescript">TypeScript</option>
-                </select>
-            </div>
-            <form id="sqlForm" enctype="multipart/form-data" class="mb-6">
-                <label for="sqlFile" class="block mb-2 font-medium">Choose SQL File</label>
-                <div class="flex items-center justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer" id="file-upload-area">
-                    <div class="text-center">
-                        <i class="fas fa-file-upload text-gray-400 text-4xl mb-2"></i>
-                        <p class="text-gray-500 font-medium">Drag and drop your SQL file here or click to select</p>
-                        <input type="file" id="sqlFile" name="sql_file" accept=".sql, .txt" required class="hidden">
+        <h1 class="text-4xl font-bold text-blue-600 mb-8 text-center animate-bounce">SQL to API Generator</h1>
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+            <form id="sqlForm" enctype="multipart/form-data" class="space-y-6">
+                <div>
+                    <label for="language-select" class="block text-lg font-medium text-gray-700 mb-2">Select Language/Framework:</label>
+                    <select id="language-select" name="language" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="javascript">JavaScript (Node.js + Express)</option>
+                        <option value="typescript">TypeScript (Node.js + Express)</option>
+                        <option value="prisma">Prisma + Next.js (Typescript & App Router)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="sqlFile" class="block text-lg font-medium text-gray-700 mb-2">Upload SQL File:</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                        <div class="space-y-1 text-center">
+                            <i class="fas fa-file-upload text-gray-400 text-4xl mb-3"></i>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="sqlFile" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                    <span>Upload a file</span>
+                                    <input id="sqlFile" name="sql_file" type="file" class="sr-only" accept=".sql,.txt">
+                                </label>
+                                <p class="pl-1">or drag and drop</p>
+                            </div>
+                            <p class="text-xs text-gray-500">SQL or TXT up to 2MB</p>
+                        </div>
                     </div>
                 </div>
-                <div id="file-info" class="mt-2 hidden">
-                    <p>File: <span id="file-name"></span></p>
+                <div id="file-info" class="hidden">
+                    <p class="text-sm text-gray-600">Selected file: <span id="file-name" class="font-semibold"></span></p>
                 </div>
-                <div class="flex justify-center mt-4">
-                    <button type="submit" id="generateBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <div class="flex justify-center">
+                    <button type="submit" id="generateBtn" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         Generate API
                     </button>
                 </div>
             </form>
-            <div id="loading" class="text-center text-blue-500 text-lg hidden">
-                <div class="lds-ring">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
+        </div>
+
+        <div id="results" class="hidden space-y-8">
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">SQL Content:</h2>
+                <div class="code-container">
+                    <pre><code id="sqlContent" class="language-sql"></code></pre>
                 </div>
-                Loading SQL...
             </div>
-            <h2 class="text-2xl font-medium mb-4">SQL Content:</h2>
-            <pre id="sqlContent" class="language-sql bg-gray-100 rounded-md p-4 mb-6 overflow-auto"></pre>
-            <div id="ollamaLoading" class="text-center text-blue-500 text-lg hidden">
-                <div class="lds-ring">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
+
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Generated API Code:</h2>
+
+                <div class="code-container">
+                    <pre><code id="generatedCode" class="language-javascript"></code></pre>
                 </div>
-                Generating API Code...
             </div>
-            <h2 class="text-2xl font-medium mb-4">Generated Code:</h2>
-            <div class="bg-blue-100 rounded-md p-4 mb-6">
-                <pre id="generatedCode" class="language-javascript"></pre>
-            </div>
-            <div class="flex justify-center">
-                <button id="exportCode" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                    Export Code
+
+            <div class="flex justify-center space-x-4">
+                <button id="exportCode" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    <i class="fas fa-download mr-2"></i> Export Code
+                </button>
+                <button id="copyCode" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-copy mr-2"></i> Copy Code
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="exampleModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="bg-white rounded-lg shadow-lg w-full max-w-xl p-6">
-                <h2 class="text-2xl font-bold mb-4">Example SQL File</h2>
-                <pre class="language-sql bg-gray-100 rounded-md p-4 mb-4 overflow-auto">
-CREATE TABLE users (
-    id INT PRIMARY KEY,
-    name VARCHAR(255),
-    email VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-INSERT INTO users (id, name, email) VALUES
-    (1, 'John Doe', 'john@example.com'),
-    (2, 'Jane Smith', 'jane@example.com'),
-    (3, 'Bob Johnson', 'bob@example.com');
-                </pre>
-                <div class="flex justify-end">
-                    <button id="closeModal" class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="toast hidden" id="toast">
-        <div class="toast-content">
-            <i class="fas fa-check-circle text-green-500 mr-2"></i>
-            <span id="toast-message"></span>
-        </div>
-    </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/notyf@3.10.0/notyf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-sql.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+
     <script>
-        let selectedLanguage = 'javascript';
-        let controller; // For storing AbortController
-        const notyf = new Notyf({
-            duration: 3000,
-            position: {
-                x: 'right',
-                y: 'bottom',
-            },
-            types: [
-                {
-                    type: 'success',
-                    background: 'green',
-                    icon: {
-                        className: 'fas fa-check-circle',
-                        tagName: 'i',
-                        color: '#fff'
-                    }
-                },
-                {
-                    type: 'error',
-                    background: 'red',
-                    icon: {
-                        className: 'fas fa-exclamation-circle',
-                        tagName: 'i',
-                        color: '#fff'
-                    }
-                }
-            ]
-        });
+        const sqlForm = document.getElementById('sqlForm');
+        const fileInput = document.getElementById('sqlFile');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const generateBtn = document.getElementById('generateBtn');
+        const results = document.getElementById('results');
+        const sqlContent = document.getElementById('sqlContent');
+        const generatedCode = document.getElementById('generatedCode');
+        const exportCodeBtn = document.getElementById('exportCode');
+        const copyCodeBtn = document.getElementById('copyCode');
 
-        const languageSelect = document.getElementById('language-select');
-        languageSelect.addEventListener('change', (event) => {
-            selectedLanguage = event.target.value;
-        });
-
-        const fileUploadArea = document.getElementById('file-upload-area');
-        fileUploadArea.addEventListener('click', () => {
-            document.getElementById('sqlFile').click();
-        });
-
-        document.getElementById('sqlFile').addEventListener('change', (event) => {
+        fileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
-                document.getElementById('file-info').classList.remove('hidden');
-                document.getElementById('file-name').textContent = file.name;
+                fileInfo.classList.remove('hidden');
+                fileName.textContent = file.name;
             }
         });
 
-        document.getElementById('sqlForm').addEventListener('submit', function(e) {
+        sqlForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(this);
-            formData.append('language', selectedLanguage);
-            controller = new AbortController(); // Create a new AbortController
-            const signal = controller.signal;
+            const formData = new FormData(sqlForm);
 
-            document.getElementById('generateBtn').disabled = true;
-            document.getElementById('loading').classList.remove('hidden');
+            try {
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Generating...';
 
-            fetch('/generate-sql', {
+                // Fetch the SQL content
+                const sqlResponse = await fetch('/generate-sql', {
                     method: 'POST',
-                    body: formData,
-                    signal: signal // Add signal to the fetch request
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById('sqlContent').textContent = data.sql_content; // Display SQL content
-                    Prism.highlightElement(document.getElementById('sqlContent')); // Syntax highlighting
-                    document.getElementById('generatedCode').textContent = ''; // Clear previous generated code
-                    document.getElementById('ollamaLoading').classList.remove('hidden'); // Show loading indicator for Ollama
-
-                    fetch('/generate-code', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                sql_content: data.sql_content,
-                                language: data.language // Use the language returned from the server
-                            }),
-                            signal: signal // Add signal to the fetch request
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok ' + response.statusText);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            // Display the generated code from Ollama
-                            const generatedCode = data.generated_code.response;
-                            document.getElementById('generatedCode').textContent = generatedCode;
-                            Prism.highlightElement(document.getElementById('generatedCode')); // Syntax highlighting
-                            notyf.success('API code generated successfully!');
-                        })
-                        .catch(error => {
-                            if (error.name === 'AbortError') {
-                                console.log('Request canceled');
-                            } else {
-                                console.error('Error:', error);
-                                notyf.error('An error occurred: ' + error.message);
-                            }
-                        })
-                        .finally(() => {
-                            document.getElementById('ollamaLoading').classList.add('hidden'); // Hide loading indicator for Ollama
-                            document.getElementById('loading').classList.add('hidden');
-                            document.getElementById('generateBtn').disabled = false;
-                        });
-                })
-                .catch(error => {
-                    if (error.name === 'AbortError') {
-                        console.log('Request canceled');
-                    } else {
-                        console.error('Error:', error);
-                        notyf.error('An error occurred: ' + error.message);
-                    }
+                    body: formData
                 });
+
+                if (!sqlResponse.ok) {
+                    throw new Error('Failed to generate SQL content.');
+                }
+
+                const sqlData = await sqlResponse.json();
+                console.log('SQL Data:', sqlData);
+
+                // Display SQL Content
+                sqlContent.textContent = sqlData.sql_content;
+                Prism.highlightElement(sqlContent);
+
+                // Fetch the generated API code
+                const codeResponse = await fetch('/generate-code', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sql_content: sqlData.sql_content,
+                        language: sqlData.language
+                    })
+                });
+
+                if (!codeResponse.ok) {
+                    const errorData = await codeResponse.json();
+                    throw new Error(errorData.error || 'Failed to generate API code.');
+                }
+
+                const codeData = await codeResponse.json();
+                console.log('Code Data:', codeData);
+
+                // Ensure generated_code is a string
+                if (!codeData.generated_code) {
+                    throw new Error('No generated code received.');
+                }
+
+                // Parse the generated_code
+                const responseLines = codeData.generated_code.split('\n');
+                const routeLine = responseLines.find(line => line.startsWith('Route:'));
+                const nameLine = responseLines.find(line => line.startsWith('Name:'));
+                const argumentsLine = responseLines.find(line => line.startsWith('Arguments:'));
+
+                // Extract code block
+                const codeStartIndex = responseLines.findIndex(line => line.startsWith('```')) + 1;
+                const codeEndIndex = responseLines.lastIndexOf('```');
+                const extractedCode = responseLines.slice(codeStartIndex, codeEndIndex).join('\n');
+
+                // Display Generated Code
+                generatedCode.textContent = extractedCode;
+                Prism.highlightElement(generatedCode);
+
+                // Show the results section
+                results.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while generating the API. Please try again.\n' + error.message);
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = 'Generate API';
+            }
         });
 
-        const exportCodeBtn = document.getElementById('exportCode');
         exportCodeBtn.addEventListener('click', () => {
-            // Implement code export functionality
-            const generatedCode = document.getElementById('generatedCode').textContent;
-            const codeBlob = new Blob([generatedCode], { type: 'text/plain' });
-            const url = URL.createObjectURL(codeBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'generated-code.txt';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            notyf.success('Code exported successfully!');
+            const code = generatedCode.textContent;
+            if (!code) {
+                alert('No code to export.');
+                return;
+            }
+
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'generated_api.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         });
 
-        const exampleModal = document.getElementById('exampleModal');
-        const openModalBtn = document.createElement('button');
-        openModalBtn.classList.add('bg-blue-500', 'text-white', 'px-4', 'py-2', 'rounded-md', 'hover:bg-blue-600', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500', 'focus:ring-offset-2');
-        openModalBtn.textContent = 'Show Example SQL File';
-        openModalBtn.addEventListener('click', () => {
-            exampleModal.classList.remove('hidden');
-        });
+        copyCodeBtn.addEventListener('click', () => {
+            const code = generatedCode.textContent;
+            if (!code) {
+                alert('No code to copy.');
+                return;
+            }
 
-        const closeModalBtn = document.getElementById('closeModal');
-        closeModalBtn.addEventListener('click', () => {
-            exampleModal.classList.add('hidden');
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Code copied to clipboard!');
+            }).catch(err => {
+                console.error('Error copying code: ', err);
+                alert('Failed to copy code.');
+            });
         });
-
-        // Add the example SQL button to the DOM
-        document.querySelector('.container').appendChild(openModalBtn);
     </script>
-
-    <style>
-        .lds-ring {
-            display: inline-block;
-            position: relative;
-            width: 24px;
-            height: 24px;
-            margin-right: 8px;
-        }
-        .lds-ring div {
-            box-sizing: border-box;
-            display: block;
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            margin: 2px;
-            border: 2px solid #4299e1;
-            border-radius: 50%;
-            animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-            border-color: #4299e1 transparent transparent transparent;
-        }
-        .lds-ring div:nth-child(1) {
-            animation-delay: -0.45s;
-        }
-        .lds-ring div:nth-child(2) {
-            animation-delay: -0.3s;
-        }
-        .lds-ring div:nth-child(3) {
-            animation-delay: -0.15s;
-        }
-        @keyframes lds-ring {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
 </body>
 
 </html>
